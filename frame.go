@@ -71,6 +71,10 @@ func newFrame(version byte, cmd byte, sid uint32) Frame {
 	return Frame{ver: version, cmd: cmd, sid: sid}
 }
 
+func newFrameWithData(version byte, cmd byte, sid uint32, data []byte) Frame {
+	return Frame{ver: version, cmd: cmd, sid: sid, data: data}
+}
+
 // rawHeader is a byte array representation of Frame header
 type rawHeader [headerSize]byte
 

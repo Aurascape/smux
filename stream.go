@@ -41,6 +41,8 @@ type stream struct {
 	id   uint32 // Stream identifier
 	sess *Session
 
+	meta map[string]interface{} // user-defined metadata
+
 	buffers [][]byte // the sequential buffers of stream
 	heads   [][]byte // slice heads of the buffers above, kept for recycle
 
@@ -610,4 +612,8 @@ func (s *stream) fin() {
 	s.finEventOnce.Do(func() {
 		close(s.chFinEvent)
 	})
+}
+
+func (s *stream) Meta() map[string]interface{} {
+	return s.meta
 }

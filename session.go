@@ -23,8 +23,10 @@
 package smux
 
 import (
+	"bytes"
 	"container/heap"
 	"encoding/binary"
+	"encoding/gob"
 	"errors"
 	"io"
 	"net"
@@ -155,8 +157,12 @@ func newSession(config *Config, conn io.ReadWriteCloser, client bool) *Session {
 	return s
 }
 
-// OpenStream is used to create a new stream
 func (s *Session) OpenStream() (*Stream, error) {
+	return s.OpenStream1(nil)
+}
+
+// OpenStream is used to create a new stream
+func (s *Session) OpenStream1(meta *map[string]interface{}) (*Stream, error) {
 	if s.IsClosed() {
 		return nil, io.ErrClosedPipe
 	}
@@ -179,8 +185,24 @@ func (s *Session) OpenStream() (*Stream, error) {
 
 	stream := newStream(sid, s.config.MaxFrameSize, s)
 
-	if _, err := s.writeControlFrame(newFrame(byte(s.config.Version), cmdSYN, sid)); err != nil {
-		return nil, err
+	if meta != nil {
+		var buffer bytes.Buffer
+		// Create a new encoder that writes to our buffer
+		encoder := gob.NewEncoder(&buffer)
+		// Encode our data
+		err := encoder.Encode(*meta)
+		if err != nil {
+			return nil, err
+		}
+
+		bytes := buffer.Bytes()
+		if _, err := s.writeControlFrame(newFrameWithData(byte(s.config.Version), cmdSYN, sid, bytes)); err != nil {
+			return nil, err
+		}
+	} else {
+		if _, err := s.writeControlFrame(newFrame(byte(s.config.Version), cmdSYN, sid)); err != nil {
+			return nil, err
+		}
 	}
 
 	s.streamLock.Lock()
@@ -395,6 +417,16 @@ func (s *Session) recvLoop() {
 				s.streamLock.Lock()
 				if _, ok := s.streams[sid]; !ok {
 					stream := newStream(sid, s.config.MaxFrameSize, s)
+					if hdr.Length() > 0 {
+						newbuf := defaultAllocator.Get(int(hdr.Length()))
+						if _, err := io.ReadFull(s.conn, newbuf); err == nil {
+							decoder := gob.NewDecoder(bytes.NewReader(newbuf))
+							var meta map[string]interface{}
+							decoder.Decode(&meta)
+							stream.meta = meta
+							_ = defaultAllocator.Put(newbuf)
+						}
+					}
 					s.streams[sid] = stream
 					select {
 					case s.chAccepts <- stream:
