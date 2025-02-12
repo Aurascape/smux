@@ -10,7 +10,6 @@ import (
 
 type ServerOuterSession struct {
 	session *smux.Session
-	conn    net.Conn // outer connection
 }
 
 type server struct {
@@ -23,7 +22,7 @@ func newServerOuterSession(conn net.Conn) *ServerOuterSession {
 		log.Println("[SVR] failed to create smux session", err)
 		return nil
 	}
-	return &ServerOuterSession{session: session, conn: conn}
+	return &ServerOuterSession{session: session}
 }
 
 func NewATunnelServer(listenOn string) (*server, error) {

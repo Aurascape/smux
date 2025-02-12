@@ -13,7 +13,6 @@ import (
 
 type ClientOuterSession struct {
 	session *smux.Session
-	conn    net.Conn
 }
 
 func NewClientOuterSession(server string) (*ClientOuterSession, error) {
@@ -30,14 +29,11 @@ func NewClientOuterSession(server string) (*ClientOuterSession, error) {
 		return nil, err
 	}
 
-	return &ClientOuterSession{
-		session: client,
-		conn:    conn,
-	}, nil
+	return &ClientOuterSession{session: client}, nil
 }
 
 func (s *ClientOuterSession) Close() {
-	s.conn.Close()
+	s.session.Close()
 }
 
 func (s *ClientOuterSession) StartInnerSession(client io.ReadWriteCloser, appName, dstAddr string) {
