@@ -418,13 +418,12 @@ func (s *Session) recvLoop() {
 				if _, ok := s.streams[sid]; !ok {
 					stream := newStream(sid, s.config.MaxFrameSize, s)
 					if hdr.Length() > 0 {
-						newbuf := defaultAllocator.Get(int(hdr.Length()))
+						newbuf := make([]byte, hdr.Length())
 						if _, err := io.ReadFull(s.conn, newbuf); err == nil {
 							decoder := gob.NewDecoder(bytes.NewReader(newbuf))
 							var meta map[string]interface{}
 							decoder.Decode(&meta)
 							stream.meta = meta
-							_ = defaultAllocator.Put(newbuf)
 						}
 					}
 					s.streams[sid] = stream
