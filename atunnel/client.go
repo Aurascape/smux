@@ -48,7 +48,7 @@ func NewClientOuterSession(server string) (*ClientOuterSession, error) {
 
 // this function will keep trying to reconnect to the server
 func (s *ClientOuterSession) Run() {
-	for !s.closed.Load() {
+	for {
 		client := s.session.Load()
 
 		if client != nil {
@@ -56,6 +56,10 @@ func (s *ClientOuterSession) Run() {
 			<-ch
 			log.Println("[CLT] session closed", client.LocalAddr())
 			s.session.Store(nil)
+		}
+
+		if !s.closed.Load() {
+			break
 		}
 
 		newConn, err := net.Dial("tcp", s.dialTo)
