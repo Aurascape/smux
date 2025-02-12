@@ -79,12 +79,16 @@ func main() {
 			log.Fatal(err)
 		}
 
+		go client.Run()
+
 		if destAddr == "" {
 			destAddr = "127.0.0.1:80"
 		}
-		go client.StartInnerSession(&aHttpClient{}, "ATunnelClient", destAddr)
-		go client.StartInnerSession(&aHttpClient{}, "ATunnelClient", destAddr)
-		time.Sleep(20 * time.Second)
+
+		for i := 0; i < 10; i++ {
+			go client.StartInnerSession(&aHttpClient{}, "ATunnelClient", destAddr)
+			time.Sleep(1 * time.Second)
+		}
 	} else {
 		fmt.Println("Usage: atunnel -s addr:port | -c addr:port")
 	}

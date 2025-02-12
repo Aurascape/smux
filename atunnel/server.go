@@ -17,7 +17,9 @@ type server struct {
 }
 
 func newServerOuterSession(conn net.Conn) *ServerOuterSession {
-	session, err := smux.Server(conn, nil)
+	config := smux.DefaultConfig()
+	config.Version = 2
+	session, err := smux.Server(conn, config)
 	if err != nil {
 		log.Println("[SVR] failed to create smux session", err)
 		return nil
